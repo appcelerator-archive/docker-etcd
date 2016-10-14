@@ -1,6 +1,6 @@
 FROM appcelerator/alpine:20160928
 
-ENV ETCD_VERSION 3.0.10
+ENV ETCD_VERSION 3.0.12
 RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz -o etcd.tar.gz && \
     tar xzf etcd.tar.gz && \
     mv etcd-*/etcd /etcd-*/etcdctl /bin/ && \
