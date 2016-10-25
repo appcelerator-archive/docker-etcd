@@ -3,4 +3,4 @@ services:
   sut:
     build: .
     image: appcelerator/etcd
-    command: ["--version"]
+    command: ["--test"]

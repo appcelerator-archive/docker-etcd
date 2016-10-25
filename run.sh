@@ -15,6 +15,20 @@ if [[ $? -ne 0 ]]; then
   ARGS="$ARGS --listen-client-urls=http://0.0.0.0:4001,http://0.0.0.0:2379 --advertise-client-urls=http://0.0.0.0:4001,http://0.0.0.0:2379"
 fi
 ARGS="$ARGS $@"
+unset TEST
+echo "$@" | grep -q -- "--test"
+if [[ $? -eq 0 ]]; then
+  TEST=1
+  ARGS=$(echo $ARGS | sed 's/--test//')
+fi
+
 
 (sleep 3 && ETCDCTL_API=3 /bin/etcdctl put ping pong) &
-exec /bin/etcd $ARGS
+if [[ -n "$TEST" ]]; then
+  /bin/etcd $ARGS &
+  echo "Running test..."
+  sleep 4
+  ETCDCTL_API=3 timeout -t 1 /bin/etcdctl --endpoints http://127.0.0.1:2379 get ping | grep pong && echo "passed" || echo "failed"
+else
+  exec /bin/etcd $ARGS
+fi
