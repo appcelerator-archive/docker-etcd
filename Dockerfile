@@ -12,6 +12,6 @@ VOLUME /data
 
 EXPOSE 2379 2380 4001 7001
 
-HEALTHCHECK --interval=5s --retries=2 --timeout=1s CMD ETCDCTL_API=3 /bin/etcdctl --endpoints http://127.0.0.1:2379 get ping | grep -q pong
+HEALTHCHECK --interval=5s --retries=3 --timeout=2s CMD ETCDCTL_API=3 /bin/etcdctl --endpoints http://127.0.0.1:2379 get ping | grep -q pong
 
 ENTRYPOINT ["/bin/run.sh"]
