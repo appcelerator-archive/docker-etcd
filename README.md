@@ -13,3 +13,8 @@ You can set the listen URLs for clients and peers:
 ## Heath check
 
 the container is started with a ping message (pong), the health check consists in getting the ping message every 5 seconds.
+
+## Tags
+
+- 3.0, 3.0.15
+- 3.1, 3.1.0-rc.1, latest
