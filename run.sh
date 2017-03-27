@@ -28,7 +28,11 @@ if [[ -n "$TEST" ]]; then
   /bin/etcd $ARGS &
   echo "Running test..."
   sleep 4
-  ETCDCTL_API=3 timeout -t 1 /bin/etcdctl --endpoints http://127.0.0.1:2379 get ping | grep pong && echo "passed" || echo "failed"
+  ETCDCTL_API=3 timeout -t 1 /bin/etcdctl --endpoints http://127.0.0.1:2379 get ping | grep pong && echo "passed"
+  if [ $? -ne 0 ]; then
+    echo "failed"
+    exit 1
+  fi
 else
   exec /bin/etcd $ARGS
 fi
