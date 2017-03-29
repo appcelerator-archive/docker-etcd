@@ -17,4 +17,4 @@ the container is started with a ping message (pong), the health check consists i
 ## Tags
 
 - 3.0, 3.0.15
-- 3.1, 3.1.4, latest
+- 3.1, 3.1.5, latest
