@@ -18,12 +18,16 @@ echo "$@" | grep -q -- "-initial-advertise-peer-urls"
 if [[ $? -ne 0 ]]; then
   echo "setting initial advertise peer urls and initial cluster"
   cip=$(dig +short $(hostname))
-  if [ -z "$cip" ]; then
+  # checking that the returned IP is really an IP
+  echo "$cip" | egrep -qe "^[0-9\.]+$"
+  if [ $? -ne 0 ]; then
     # if not resolved by Docker dns, there should be an entry in /etc/hosts
+    echo "warning: unable to resolve this container's IP ($cip), revert to /etc/hosts"
     cip=$(grep $(hostname) /etc/hosts |awk '{print $1}' | head -1)
   fi
-  if [ -z "$cip" ]; then
-    echo "unable to get this container's IP"
+  echo "$cip" | egrep -qe "^[0-9\.]+$"
+  if [ $? -ne 0 ]; then
+    echo "unable to get this container's IP ($cip)"
     exit 1
   fi
   ARGS="$ARGS --initial-advertise-peer-urls http://$cip:2380 --initial-cluster default=http://$cip:2380"
