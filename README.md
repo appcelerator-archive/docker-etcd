@@ -14,9 +14,9 @@ You can set the listen URLs for clients and peers:
 
 to run an etcd cluster with Docker swarm, you have to specify the name of the service, and optionally the minimum number of seeds for the cluster to be created.
 
-    docker service create -e SERVICE_NAME=etcd -e MIN_SEEDS_COUNT=2 --name etcd appcelerator/etcd
+    docker service create -e SERVICE_NAME=etcd -e MIN_SEEDS_COUNT=2 --replicas 3 --name etcd appcelerator/etcd
 
 ## Tags
 
 - 3.0, 3.0.15
-- 3.1, 3.1.6, latest
+- 3.1, 3.1.7, latest
