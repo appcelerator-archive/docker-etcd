@@ -19,4 +19,5 @@ to run an etcd cluster with Docker swarm, you have to specify the name of the se
 ## Tags
 
 - 3.0, 3.0.15
-- 3.1, 3.1.9, latest
+- 3.1, 3.1.10
+- 3.2, 3.2.3, latest

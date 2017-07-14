@@ -11,6 +11,11 @@ INITIAL_CLUSTER_STATE=new
 NODE_NAME=default
 
 ARGS="--data-dir=/data"
+echo "$@" | grep -q -- "-auto-compaction-retention"
+if [[ $? -ne 0 ]]; then
+  echo "setting default auto compaction retention"
+  ARGS="$ARGS --auto-compaction-retention=1"
+fi
 echo "$@" | grep -q -- "-listen-peers-urls"
 if [[ $? -ne 0 ]]; then
   echo "setting default urls for peers"
@@ -19,7 +24,7 @@ fi
 echo "$@" | grep -q -- "-listen-client-urls"
 if [[ $? -ne 0 ]]; then
   echo "setting default urls for client"
-  ARGS="$ARGS --listen-client-urls=http://0.0.0.0:4001,http://0.0.0.0:2379 --advertise-client-urls=http://0.0.0.0:4001,http://0.0.0.0:2379"
+  ARGS="$ARGS --listen-client-urls=http://0.0.0.0:4001,http://0.0.0.0:2379"
 fi
 echo "$@" | grep -q -- "-initial-advertise-peer-urls"
 if [[ $? -ne 0 ]]; then
@@ -81,6 +86,14 @@ if [[ $? -ne 0 ]]; then
   echo "initial cluster is $INITIAL_CLUSTER"
   ARGS="$ARGS --name $NODE_NAME --initial-advertise-peer-urls http://$cip:2380 --initial-cluster $INITIAL_CLUSTER --initial-cluster-token $INITIAL_CLUSTER_TOKEN --initial-cluster-state $INITIAL_CLUSTER_STATE"
 fi
+echo "$@" | grep -q -- "-advertise-client-urls"
+if [[ $? -ne 0 ]]; then
+  echo "setting default advertise urls for client"
+  [[ -z "$cip" ]] && cip=$(dig +short $(hostname))
+  [[ -z "$cip" ]] && exit 1
+  ARGS="$ARGS --advertise-client-urls=http://${cip}:4001,http://${cip}:2379"
+fi
+
 [ $# -ne 0 ] && ARGS="$@ $ARGS"
 unset TEST
 echo "$@" | grep -q -- "--test"
