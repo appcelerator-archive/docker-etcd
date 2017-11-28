@@ -9,6 +9,8 @@ echo -n "$(date +%F\ %T) I | Running "
 INITIAL_CLUSTER_TOKEN=etcd-cluster
 INITIAL_CLUSTER_STATE=new
 NODE_NAME=default
+# lock file to make sure we're not running multiple containers on the same volume
+LOCK_FILE=/data/ctr.lck
 
 ARGS="--data-dir=/data"
 echo "$@" | grep -q -- "-auto-compaction-retention"
@@ -121,7 +123,7 @@ if [[ -n "$TEST" ]]; then
   fi
 else
   if [ "${ARGS:0:1}" = '-' ]; then
-    exec /bin/etcd $ARGS
+    exec flock -xn $LOCK_FILE /bin/etcd $ARGS
   else
     exec $ARGS
   fi
