@@ -9,6 +9,8 @@ RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/et
     rm -rf etcd.tar.gz etcd-*
 
 COPY run.sh /bin/
+COPY healthcheck.sh /bin/
+RUN chmod 755 /bin/healthcheck.sh
 
 VOLUME /data
 
@@ -17,6 +19,6 @@ EXPOSE 2379 2380 4001 7001
 ENV MIN_SEEDS_COUNT 2
 ENV ETCDCTL_API 3
 
-#HEALTHCHECK --interval=5s --retries=3 --timeout=10s CMD ETCDCTL_API=3 /bin/etcdctl --endpoints=http://127.0.0.1:2379 get ping | grep -q pong
+HEALTHCHECK --start-period=1s --interval=5s --retries=3 --timeout=10s CMD /bin/healthcheck.sh
 
 ENTRYPOINT ["/sbin/tini", "--", "/bin/run.sh"]
