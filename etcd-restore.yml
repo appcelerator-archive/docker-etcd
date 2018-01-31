@@ -1,0 +1,25 @@
+version: "3.3"
+
+networks:
+  etcd:
+    external: true
+
+services:
+
+  etcdrestore:
+    image: appcelerator/etcd:nde
+    volumes:
+      - /tmp/etcd.db:/backup.db
+    networks:
+      etcd:
+        aliases:
+          - etcd
+    environment:
+      SERVICE_NAME: "etcdrestore"
+      RESTORED_SERVICE: "etcd"
+      MIN_SEEDS_COUNT: 3
+    deploy:
+      mode: replicated
+      replicas: 3
+      restart_policy:
+        condition: none

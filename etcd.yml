@@ -1,0 +1,18 @@
+version: "3.3"
+
+networks:
+  etcd:
+    external: true
+
+services:
+
+  etcd:
+    image: appcelerator/etcd:nde
+    networks:
+      - etcd
+    environment:
+      SERVICE_NAME: "etcd"
+      MIN_SEEDS_COUNT: 3
+    deploy:
+      mode: replicated
+      replicas: 3
