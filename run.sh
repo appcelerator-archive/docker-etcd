@@ -58,6 +58,7 @@ if [[ $? -ne 0 ]]; then
   fi
   if [[ -n "$SERVICE_NAME" ]]; then
     INITIAL_CLUSTER_TOKEN=$SERVICE_NAME
+
     echo "building a seeds list for cluster $SERVICE_NAME"
     # IP of the service tasks
     typeset -i nbt
@@ -80,12 +81,69 @@ if [[ $? -ne 0 ]]; then
       [[ -z "$INITIAL_CLUSTER" ]] && INITIAL_CLUSTER="$name=http://$tip:2380" || INITIAL_CLUSTER="$INITIAL_CLUSTER,$name=http://$tip:2380"
       if [[ "$cip" = "$tip" ]]; then
         NODE_NAME=$name
+      else
+        # check if a cluster already exists
+	echo "checking existing cluster with $name"
+        timeout -t 2 etcdctl --endpoints $tip:2379 get probe-members >/dev/null 2>&1 && INITIAL_CLUSTER_STATE=existing
       fi
     done
   else
       INITIAL_CLUSTER="default=http://$cip:2380"
   fi
-  echo "initial cluster is $INITIAL_CLUSTER"
+  if [[ "$INITIAL_CLUSTER_STATE" = "existing" ]]; then
+    # first, remove dead members
+    peers=$(etcdctl --endpoints $SERVICE_NAME:2379 member list | cut -d, -f1,2,3,4 | tr -d ' ')
+    for p in $peers; do
+      peerURL=$(echo $p | cut -d, -f4)
+      [[ $peerURL = "http://$cip:2380" ]] && continue
+      peerID=$(echo $p | cut -d, -f1)
+      peerStatus=$(echo $p | cut -d, -f2)
+      peerName=$(echo $p | cut -d, -f3)
+      echo "checking peer $p"
+      curl -sf $peerURL/version >/dev/null
+      if [[ $? -ne 0 ]]; then
+        if [[ "x$peerStatus" = "xstarted" ]]; then
+          echo "peer check failed, attempting to remove ${peerName:-unknown} ($peerID)"
+	  etcdctl --endpoints $SERVICE_NAME:2379 member remove $peerID
+        fi
+        echo "peer check failed or peer not started, removing $peerID / $peerURL from initial cluster"
+	echo $INITIAL_CLUSTER | grep -q $peerURL &&
+	    INITIAL_CLUSTER=$(echo $INITIAL_CLUSTER | sed "s%[^,]*=${peerURL}%%" | sed "s/,$//" | sed "s/^,//" | sed "s/,,/,/")
+      else
+        echo "peer check successful for $peerName"
+      fi
+    done
+    # then, add the new node
+    echo "prepare this node as a new cluster member"
+    etcdctl --endpoints $SERVICE_NAME:2379 member add $NODE_NAME --peer-urls=http://$cip:2380
+  fi
+  # to restore a db, create a temporary service with
+  #   restart condition = none
+  #   env var RESTORED_SERVICE = name of the permanent service (should be down)
+  #   mount the backup file on /backup.db
+  #   add the RESTORED_SERVICE name as alias on the network
+  if [[ -n "$RESTORED_SERVICE" ]]; then
+    if [[ ! -f /backup.db ]]; then
+      echo "/backup.db not found, abort"
+      exit 1
+    fi
+    INITIAL_CLUSTER_TOKEN=$RESTORED_SERVICE
+    echo "restoring snapshot..."
+    ETCDCTL_API=3 etcdctl snapshot restore /backup.db \
+      --name $NODE_NAME \
+      --initial-cluster $INITIAL_CLUSTER \
+      --initial-cluster-token $INITIAL_CLUSTER_TOKEN \
+      --initial-advertise-peer-urls http://$cip:2380 || exit 1
+    echo "done"
+    echo "starting etcd..."
+    etcd \
+      --name $NODE_NAME \
+      --listen-client-urls http://$cip:2379 \
+      --advertise-client-urls http://$RESTORED_SERVICE:2379 \
+      --listen-peer-urls http://$cip:2380
+    exit $?
+  fi
+  echo "initial cluster is $INITIAL_CLUSTER ($INITIAL_CLUSTER_STATE)"
   ARGS="$ARGS --name $NODE_NAME --initial-advertise-peer-urls http://$cip:2380 --initial-cluster $INITIAL_CLUSTER --initial-cluster-token $INITIAL_CLUSTER_TOKEN --initial-cluster-state $INITIAL_CLUSTER_STATE"
 fi
 echo "$@" | grep -q -- "-advertise-client-urls"
