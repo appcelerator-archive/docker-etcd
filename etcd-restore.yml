@@ -7,7 +7,7 @@ networks:
 services:
 
   etcdrestore:
-    image: appcelerator/etcd:nde
+    image: appcelerator/etcd:latest
     volumes:
       - /tmp/etcd.db:/backup.db
     networks:

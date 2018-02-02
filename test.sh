@@ -16,12 +16,13 @@ _cleanup() {
 docker network create --attachable -d overlay etcdtest >/dev/null
 echo "Starting etcd single node ($image)"
 #docker run -d -e ETCDCTL_API=$API --name etcdtest $image etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://etcdtest:2379 --listen-peer-urls http://0.0.0.0:2380
-docker run -d -e ETCDCTL_API=$API --name etcdtest $image etcd --advertise-client-urls http://etcdtest:2379
+docker run -d -e ETCDCTL_API=$API --name etcdtest $image etcd --advertise-client-urls http://etcdtest:2379 || exit 1
 
 echo -n "health... "
 code=1
 SECONDS=0
 while [[ $code -ne 0 ]]; do
+  cid=$(docker ps --filter=name=etcdtest -q); [[ -z "$cid" ]] && break
   docker exec etcdtest etcdctl --endpoints http://localhost:2379 endpoint health | grep -qw healthy
   code=$?
   [[ $code -eq 0 ]] && echo "healthy" || echo "unhealthy"
@@ -29,6 +30,7 @@ while [[ $code -ne 0 ]]; do
 done
 if [ $code -ne 0 ]; then
   docker exec etcdtest etcdctl --endpoints http://localhost:2379 endpoint health
+  docker logs etcdtest
   echo "FAIL"
   _cleanup
   exit 1
