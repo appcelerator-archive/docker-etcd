@@ -1,7 +1,7 @@
 FROM appcelerator/alpine:3.7.0
 
 RUN apk --no-cache add bind-tools tini@community
-ENV ETCD_VERSION 3.2.15
+ENV ETCD_VERSION 3.2.16
 RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz -o etcd.tar.gz && \
     tar xzf etcd.tar.gz && \
     mv etcd-*/etcd /etcd-*/etcdctl /bin/ && \
