@@ -65,5 +65,5 @@ give it time to stabilize, and remove the temporary members:
 
 - 3.0, 3.0.15
 - 3.1, 3.1.11
-- 3.2, 3.2.16
-- 3.3, 3.3.1, latest
+- 3.2, 3.2.18
+- 3.3, 3.3.3, latest
